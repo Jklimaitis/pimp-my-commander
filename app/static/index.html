@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pimp My Commander</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .card-img {
+            transition: transform 0.2s ease-in-out;
+            border-radius: 4.75% / 3.5%;
+        }
+        .card-img:hover {
+            transform: scale(1.06);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+
+    <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🧙‍♂️</span>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">
+                    Pimp My Commander
+                </h1>
+            </div>
+            <div class="flex items-center gap-2.5">
+                <button type="button" onclick="openRecommendDecksModal()" 
+                    class="bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-amber-300 text-xs font-bold px-3 py-1.5 rounded-lg border border-amber-500/40 hover:border-amber-400 transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                    <span>🔮 Descobrir Decks</span>
+                </button>
+                <button type="button" onclick="openCollectionModal()" 
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 hover:border-amber-500 transition flex items-center gap-1.5 cursor-pointer">
+                    <span>📦 Minha Coleção</span>
+                    <span id="collectionHeaderBadge" class="bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded text-[11px]">0 cartas</span>
+                </button>
+                <a href="/docs" target="_blank" class="text-xs text-slate-400 hover:text-amber-400 transition hidden sm:inline">
+                    Swagger API Docs ↗
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Coluna Esquerda: Input -->
+        <section class="lg:col-span-4 space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">Comandante</label>
+                    <input id="commanderInput" type="text" placeholder="Ex: Zurgo Helmsmasher" 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-amber-500">
+                </div>
+
+                <!-- Carregar por Link do ManaBox -->
+                <div class="bg-slate-950/70 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                    <label class="block text-[11px] font-semibold text-slate-300">
+                        📱 Carregar por Link do ManaBox
+                    </label>
+                    <div class="flex gap-2">
+                        <input id="manaboxUrlInput" type="url" placeholder="https://manabox.app/decks/..."
+                            class="flex-1 bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+                        <button id="loadUrlBtn" type="button" onclick="loadDeckFromManaBoxUrl()"
+                            class="bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold px-3 py-1.5 rounded-md border border-slate-700 hover:border-amber-500 text-xs transition cursor-pointer">
+                            📥 Carregar
+                        </button>
+                    </div>
+                    <div id="urlFeedback" class="hidden text-[11px] px-2 py-1 rounded"></div>
+                </div>
+
+                <!-- Carregar Deck Cadastrado -->
+                <div id="savedDecksBox" class="hidden bg-slate-950/70 border border-slate-800 rounded-lg p-2.5 space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-[11px] font-semibold text-slate-300">
+                            🛡️ Carregar Deck Cadastrado
+                        </label>
+                        <span id="savedDecksCountBadge" class="text-[10px] text-sky-400 font-medium"></span>
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="savedDecksSelect" onchange="onSavedDeckSelectChanged()" 
+                            class="flex-1 bg-slate-900 border border-slate-700 rounded-md px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                            <option value="">-- Selecione um deck salvo --</option>
+                        </select>
+                        <button id="loadSavedDeckBtn" type="button" onclick="loadSelectedSavedDeck()"
+                            class="bg-slate-800 hover:bg-slate-700 text-sky-400 font-semibold px-3 py-1.5 rounded-md border border-slate-700 hover:border-sky-500 text-xs transition cursor-pointer">
+                            📥 Usar
+                        </button>
+                    </div>
+                    <div id="savedDeckFeedback" class="hidden text-[11px] px-2 py-1 rounded"></div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300 mb-1">
+                        Lista do Deck (Moxfield, LigaMagic, Archidekt)
+                    </label>
+                    <textarea id="decklistInput" rows="10" 
+                        placeholder="1 Sol Ring&#10;1 Arcane Signet&#10;1 Swords to Plowshares&#10;1 Colossus Hammer... (ou cole o link do ManaBox aqui)"
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3.5 text-sm font-mono focus:outline-none focus:border-amber-500"></textarea>
+                </div>
+
+                <!-- Toggle Coleção -->
+                <div class="bg-slate-950/60 border border-slate-800 rounded-lg p-3">
+                    <label class="flex items-start gap-2.5 cursor-pointer">
+                        <input id="useCollectionCheckbox" type="checkbox" class="mt-1 accent-amber-500 w-4 h-4 rounded cursor-pointer">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-200 block">Sugerir apenas cartas da minha coleção</span>
+                            <span class="text-[11px] text-slate-400 block leading-tight">
+                                Ignora cartas que você não possui ou que já estão presas em outros decks montados.
+                            </span>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Descoberta de Decks da Coleção -->
+                <button type="button" onclick="openRecommendDecksModal()" 
+                    class="w-full bg-slate-950/80 hover:bg-slate-900 border border-amber-500/40 hover:border-amber-400 text-amber-300 rounded-lg p-2.5 text-xs font-semibold flex items-center justify-between transition cursor-pointer group shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">🔮</span>
+                        <div class="text-left">
+                            <span class="block text-slate-200 group-hover:text-amber-400 font-bold leading-none">Quais decks consigo montar?</span>
+                            <span class="text-[10px] text-slate-400 font-normal">Descobrir decks com base na sua coleção</span>
+                        </div>
+                    </div>
+                    <span class="text-[11px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-bold group-hover:bg-amber-500 group-hover:text-slate-950 transition">Ver →</span>
+                </button>
+
+                <button id="analyzeBtn" type="button" onclick="analyzeDeck()" 
+                    class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold py-3 rounded-lg shadow transition flex justify-center items-center gap-2 cursor-pointer">
+                    <span>⚡ Analisar e Otimizar Deck</span>
+                </button>
+
+                <div id="errorBox" class="hidden bg-red-950/60 border border-red-800 text-red-300 text-xs p-3 rounded-lg space-y-3"></div>
+            </div>
+        </section>
+
+        <!-- Coluna Direita: Resultados -->
+        <section class="lg:col-span-8 space-y-8">
+            
+            <div id="emptyState" class="bg-slate-900/40 border border-dashed border-slate-800 rounded-xl p-12 text-center text-slate-500">
+                <p class="text-lg">Cole a lista do seu deck ao lado para receber o diagnóstico tático e recomendações visuais.</p>
+            </div>
+
+            <!-- Caixa de Seleção de Comandante -->
+            <div id="candidatesBox" class="hidden bg-slate-900 border border-amber-500/50 rounded-xl p-6 space-y-4">
+                <h3 id="candidatesMessage" class="text-sm font-semibold text-amber-400"></h3>
+                <div id="candidatesGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+            </div>
+
+            <div id="loadingState" class="hidden bg-slate-900/40 border border-slate-800 rounded-xl p-12 text-center space-y-4">
+                <div class="inline-block w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-slate-300 font-medium">Consultando Scryfall, EDHREC e processando análise tática no Agente...</p>
+                <p class="text-xs text-slate-500">Isso leva cerca de 5 a 15 segundos.</p>
+            </div>
+
+            <div id="resultsContent" class="hidden space-y-8">
+                
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-lg font-bold text-amber-400">🧠 Diagnóstico do Agente</h2>
+                            <span id="collectionUsedBadge" class="hidden text-[11px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full font-medium">
+                                📦 Filtrado pela Coleção
+                            </span>
+                        </div>
+                        <span id="deckCountBadge" class="text-xs bg-slate-800 px-2.5 py-1 rounded-full text-slate-300"></span>
+                    </div>
+                    <p id="tacticalSummary" class="text-slate-300 text-sm leading-relaxed"></p>
+                    
+                    <div class="bg-slate-950/70 border border-slate-800/80 rounded-lg p-4">
+                        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">📊 Feedback de Curva de Mana & Recursos</h3>
+                        <p id="manaCurveFeedback" class="text-slate-300 text-sm"></p>
+                    </div>
+                </div>
+
+                <!-- Adições Prioritárias -->
+                <div class="space-y-3">
+                    <h2 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+                        <span id="priorityAdditionsTitle">🚀 Adições Prioritárias (Gerais do EDHREC)</span>
+                    </h2>
+                    <div id="priorityAdditionsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+                </div>
+
+                <!-- Upgrades Futuros (quando usa coleção) -->
+                <div id="futureUpgradesSection" class="hidden space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                            <span>🌟 Upgrades Futuros (Cartas fora da sua coleção)</span>
+                        </h2>
+                        <span class="text-xs text-slate-500">Sugestões de topo para adquirir no futuro</span>
+                    </div>
+                    <div id="futureUpgradesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+                </div>
+
+                <!-- Cortes Sugeridos -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
+                    <h2 class="text-lg font-bold text-rose-400">✂️ Cortes Sugeridos</h2>
+                    <div id="cutsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+
+                <!-- Top Sinergias Faltantes (Tabs: Geral & Budget) -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
+                        <div class="flex items-center gap-2">
+                            <button id="tabGeneralBtn" type="button" onclick="switchEdhrecTab('general')"
+                                class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-sky-950 text-sky-300 border border-sky-800 shadow transition cursor-pointer">
+                                🔥 Staples Gerais (EDHREC)
+                            </button>
+                            <button id="tabBudgetBtn" type="button" onclick="switchEdhrecTab('budget')"
+                                class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800 transition cursor-pointer">
+                                💰 Opções Budget (Baixo Custo)
+                            </button>
+                        </div>
+                        <span id="edhrecTabSubtitle" class="text-xs text-slate-400">Cartas mais populares do formato</span>
+                    </div>
+
+                    <div id="missingStaplesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
+                    <div id="missingBudgetGrid" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal: Gerenciamento de Coleção & Decks Montados -->
+    <div id="collectionModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">📦</span>
+                    <h3 class="text-base font-bold text-slate-100">Minha Coleção & Decks Montados</h3>
+                </div>
+                <button type="button" onclick="closeCollectionModal()" class="text-slate-400 hover:text-slate-200 text-lg p-1">✕</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6">
+                <!-- Status Atual -->
+                <div class="grid grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 text-center">
+                    <div>
+                        <span class="text-xs text-slate-400 block">Total de Cartas</span>
+                        <span id="modalTotalCards" class="text-lg font-bold text-amber-400">0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 block">Cartas Únicas</span>
+                        <span id="modalUniqueCards" class="text-lg font-bold text-slate-200">0</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 block">Decks Montados</span>
+                        <span id="modalBuiltDecksCount" class="text-lg font-bold text-sky-400">0</span>
+                    </div>
+                </div>
+
+                <!-- Importar Coleção -->
+                <div class="space-y-3 border-t border-slate-800 pt-4">
+                    <h4 class="text-sm font-semibold text-slate-200">📥 Importar Coleção (Manabox CSV ou Texto)</h4>
+                    <p class="text-xs text-slate-400">
+                        Cole o arquivo exportado do <b>Manabox</b> (CSV com colunas Name e Quantity) ou formato texto (ex: <i>"1 Sol Ring"</i>, <i>"2x Forest"</i>).
+                    </p>
+                    <textarea id="collectionInputText" rows="6" 
+                        placeholder="Cole o CSV do Manabox ou sua lista de cartas aqui..."
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs font-mono focus:outline-none focus:border-amber-500"></textarea>
+
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div class="flex items-center gap-4 text-xs text-slate-300">
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="importMode" value="replace" checked class="accent-amber-500">
+                                <span>Substituir coleção atual</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="importMode" value="add" class="accent-amber-500">
+                                <span>Somar à coleção</span>
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="importBtn" type="button" onclick="submitImportCollection()" 
+                                class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-4 py-2 rounded-lg text-xs transition cursor-pointer">
+                                Importar Coleção
+                            </button>
+                            <button type="button" onclick="submitClearCollection()" 
+                                class="bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-300 font-medium px-3 py-2 rounded-lg text-xs transition cursor-pointer">
+                                Limpar
+                            </button>
+                        </div>
+                    </div>
+                    <div id="modalImportMsg" class="hidden text-xs p-2.5 rounded-lg"></div>
+                </div>
+
+                <!-- Decks Montados -->
+                <div class="space-y-3 border-t border-slate-800 pt-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="text-sm font-semibold text-slate-200">🛡️ Decks Montados</h4>
+                            <p class="text-xs text-slate-400">Cartas usadas aqui não serão recomendadas como disponíveis para outros decks.</p>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Decks Cadastrados -->
+                    <div id="builtDecksList" class="space-y-2">
+                        <p class="text-xs text-slate-500 italic">Nenhum deck montado registrado.</p>
+                    </div>
+
+                    <!-- Formulário para Registrar Novo Deck Montado -->
+                    <details class="bg-slate-950/60 border border-slate-800 rounded-lg p-3">
+                        <summary class="text-xs font-semibold text-amber-400 cursor-pointer">➕ Cadastrar deck montado</summary>
+                        <div class="space-y-2.5 mt-3">
+                            <input id="builtDeckName" type="text" placeholder="Nome do deck (ex: Urza Artifacts - opcional se usar link)"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+                            <textarea id="builtDeckList" rows="4" placeholder="Cole a lista de cartas ou o link público do ManaBox do deck montado..."
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-xs font-mono focus:outline-none focus:border-amber-500"></textarea>
+                            <button type="button" onclick="submitSaveBuiltDeck()"
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition cursor-pointer">
+                                Salvar Deck Montado
+                            </button>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-800 bg-slate-900/60 flex justify-end">
+                <button type="button" onclick="closeCollectionModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-4 py-2 rounded-lg cursor-pointer">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Sugestão de Decks da Coleção -->
+    <div id="recommendDecksModal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-5xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/80">
+                <div class="flex items-center gap-3">
+                    <span class="text-3xl">🔮</span>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold text-slate-100">
+                                Decks Recomendados com a sua Coleção
+                            </h3>
+                            <span id="recommendCountBadge" class="hidden text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-semibold"></span>
+                        </div>
+                        <p class="text-xs text-slate-400">
+                            Descubra os melhores baralhos do formato que você já tem praticamente prontos cruzando as cartas da sua coleção física com as sinergias do EDHREC.
+                        </p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeRecommendDecksModal()" class="text-slate-400 hover:text-slate-200 text-lg cursor-pointer p-1">✕</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6 flex-1">
+                <div id="recommendLoading" class="py-16 text-center space-y-4">
+                    <div class="inline-block w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p class="text-slate-200 font-semibold">Cruzando cartas da sua coleção com as melhores sinergias do EDHREC...</p>
+                    <p class="text-xs text-slate-500">Calculando compatibilidade de cores, staples possuídos e arquétipos viáveis.</p>
+                </div>
+
+                <div id="recommendEmptyState" class="hidden py-12 text-center text-slate-400 space-y-3">
+                    <span class="text-4xl block">📦</span>
+                    <p class="text-sm font-medium text-slate-300" id="recommendEmptyMsg">Nenhum comandante viável encontrado na sua coleção no momento.</p>
+                    <button type="button" onclick="closeRecommendDecksModal(); openCollectionModal();" class="text-xs text-amber-400 hover:underline cursor-pointer">
+                        Importar ou gerenciar coleção →
+                    </button>
+                </div>
+
+                <div id="recommendGrid" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Cards dos decks gerados dinamicamente via JS -->
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-800 bg-slate-900/60 flex items-center justify-between">
+                <span class="text-[11px] text-slate-400">💡 Ao clicar em <b>"🚀 Montar & Analisar"</b>, o sistema carrega o rascunho de 100 cartas da sua coleção e roda a análise tática completa.</span>
+                <button type="button" onclick="closeRecommendDecksModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium px-4 py-2 rounded-lg cursor-pointer">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function cleanCardName(cardName) {
+            if (!cardName) return '';
+            let clean = String(cardName).trim();
+            // Remove prefixos de quantidade como "1x ", "1 ", "SB: 1 "
+            clean = clean.replace(/^(?:SB:\s*)?(?:[0-9]+x?\s+)?/, '');
+            // Para cartas duplas ou split ("Wear // Tear", "Emeria's Call // Emeria..."), busca pela face frontal
+            if (clean.includes(' // ')) {
+                clean = clean.split(' // ')[0].trim();
+            }
+            // Remove códigos de edição / colecionador entre parênteses ou colchetes, ex: "Sol Ring (CMR) 234" -> "Sol Ring"
+            clean = clean.replace(/\s*[\(\[\{].*?[\)\]\}].*$/, '');
+            // Remove marcas de foil como *F*
+            clean = clean.replace(/\s+\*.*\*$/, '');
+            // Remove aspas nas extremidades
+            clean = clean.replace(/^["']+|["']+$/g, '').trim();
+            return clean;
+        }
+
+        function scryfallImgUrl(cardName) {
+            const clean = cleanCardName(cardName);
+            if (!clean) return '';
+            // Roteia pelo proxy local que possui cache em disco e proteção total contra bloqueios/rate-limit
+            return `/card-image?name=${encodeURIComponent(clean)}`;
+        }
+
+        function onCardImgError(img) {
+            if (!img) return;
+            const currentSrc = img.src || '';
+            const cardName = img.alt || '';
+            const clean = cleanCardName(cardName);
+
+            // Se falhou ao buscar no proxy local (/card-image), tenta diretamente no Scryfall
+            if (currentSrc.includes('/card-image') && clean && !img.dataset.scryfallTried) {
+                img.dataset.scryfallTried = "true";
+                img.src = `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(clean)}&format=image&version=normal`;
+                return;
+            }
+
+            if (img.dataset.failed) return;
+            img.dataset.failed = "true";
+            img.onerror = null; // impede loop recursivo
+            
+            const safeTitle = (clean || cardName || 'Carta').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            
+            // Fallback gracioso com SVG temático de Magic para nunca exibir imagem quebrada
+            const svg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="240" height="335" viewBox="0 0 240 335">` +
+                `<rect width="240" height="335" rx="12" fill="%230f172a" stroke="%23334155" stroke-width="2"/>` +
+                `<rect x="10" y="10" width="220" height="315" rx="8" fill="%231e293b" stroke="%23475569" stroke-width="1"/>` +
+                `<circle cx="120" cy="115" r="32" fill="%23334155"/>` +
+                `<text x="120" y="125" font-size="30" text-anchor="middle" fill="%23f59e0b" font-family="sans-serif">🧙‍♂️</text>` +
+                `<text x="120" y="185" font-size="13" font-weight="bold" text-anchor="middle" fill="%23f1f5f9" font-family="sans-serif">${encodeURIComponent(safeTitle)}</text>` +
+                `<text x="120" y="210" font-size="11" text-anchor="middle" fill="%2394a3b8" font-family="sans-serif">Imagem indisponível</text>` +
+                `</svg>`;
+
+            img.src = svg;
+            img.classList.add('opacity-80');
+        }
+
+        function escapeAttr(str) {
+            return String(str || '').replace(/"/g, '&quot;');
+        }
+
+        function selectCommanderOption(commanderName) {
+            document.getElementById('commanderInput').value = commanderName;
+            document.getElementById('candidatesBox').classList.add('hidden');
+            analyzeDeck();
+        }
+
+        async function loadDeckFromManaBoxUrl() {
+            const urlInput = document.getElementById('manaboxUrlInput');
+            const url = urlInput.value.trim();
+            const fb = document.getElementById('urlFeedback');
+            const btn = document.getElementById('loadUrlBtn');
+
+            if (!url) {
+                fb.className = "text-[11px] px-2 py-1 rounded bg-rose-950 text-rose-300 border border-rose-800";
+                fb.textContent = "Cole o link do ManaBox primeiro.";
+                fb.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Carregando...";
+            fb.classList.add('hidden');
+
+            try {
+                const res = await fetch('/deck/from-url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Falha ao carregar deck.');
+
+                if (data.commander) {
+                    document.getElementById('commanderInput').value = data.commander;
+                }
+                document.getElementById('decklistInput').value = data.raw_decklist;
+
+                fb.className = "text-[11px] px-2 py-1 rounded bg-emerald-950 text-emerald-300 border border-emerald-800";
+                fb.textContent = `✅ "${data.name}" carregado com sucesso (${data.total_cards} cartas)!`;
+                fb.classList.remove('hidden');
+            } catch (err) {
+                fb.className = "text-[11px] px-2 py-1 rounded bg-rose-950 text-rose-300 border border-rose-800";
+                fb.textContent = err.message;
+                fb.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "📥 Carregar";
+            }
+        }
+
+        // --- Gerenciamento da Coleção ---
+        function openCollectionModal() {
+            document.getElementById('collectionModal').classList.remove('hidden');
+            loadCollectionSummary();
+        }
+
+        function closeCollectionModal() {
+            document.getElementById('collectionModal').classList.add('hidden');
+            document.getElementById('modalImportMsg').classList.add('hidden');
+        }
+
+        let activeSavedDeckName = null;
+        let cachedBuiltDecks = [];
+
+        async function loadCollectionSummary() {
+            try {
+                const res = await fetch('/collection');
+                if (!res.ok) return;
+                const data = await res.json();
+                
+                const countBadge = `${data.total_cards || 0} cartas`;
+                document.getElementById('collectionHeaderBadge').textContent = countBadge;
+                document.getElementById('modalTotalCards').textContent = data.total_cards || 0;
+                document.getElementById('modalUniqueCards').textContent = data.unique_cards || 0;
+                const builtDecks = data.built_decks || [];
+                cachedBuiltDecks = builtDecks;
+                document.getElementById('modalBuiltDecksCount').textContent = builtDecks.length;
+
+                // Atualiza o select de decks cadastrados na barra lateral
+                const savedBox = document.getElementById('savedDecksBox');
+                const savedSelect = document.getElementById('savedDecksSelect');
+                const savedCountBadge = document.getElementById('savedDecksCountBadge');
+
+                if (builtDecks.length > 0) {
+                    const currentSelected = savedSelect ? savedSelect.value : '';
+                    savedSelect.innerHTML = `<option value="">-- Selecione um deck salvo (${builtDecks.length}) --</option>` +
+                        builtDecks.map(d => `<option value="${escapeAttr(d.name)}" ${d.name === currentSelected ? 'selected' : ''}>${escapeAttr(d.name)} (${d.cards || d.cards_count} cartas)</option>`).join('');
+                    if (savedCountBadge) savedCountBadge.textContent = `${builtDecks.length} salvo(s)`;
+                    savedBox.classList.remove('hidden');
+                } else {
+                    savedBox.classList.add('hidden');
+                }
+
+                const decksList = document.getElementById('builtDecksList');
+                if (builtDecks.length > 0) {
+                    decksList.innerHTML = builtDecks.map(d => `
+                        <div class="flex items-center justify-between bg-slate-950 border border-slate-800 p-2.5 rounded-lg text-xs">
+                            <div>
+                                <span class="font-semibold text-slate-200">${escapeAttr(d.name)}</span>
+                                <span class="text-slate-500 ml-2">(${d.cards || d.cards_count} cartas)</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="loadDeckFromModal('${escapeAttr(d.name)}')" class="text-sky-400 hover:text-sky-300 font-semibold px-2 py-1 cursor-pointer">
+                                    🔍 Analisar
+                                </button>
+                                <button type="button" onclick="deleteDeck('${escapeAttr(d.name)}')" class="text-rose-400 hover:text-rose-300 font-medium px-2 py-1 cursor-pointer">
+                                    Excluir ✕
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    decksList.innerHTML = `<p class="text-xs text-slate-500 italic">Nenhum deck montado registrado.</p>`;
+                }
+            } catch (e) {
+                console.error("Falha ao carregar sumário da coleção", e);
+            }
+        }
+
+        function applyDeckToForm(deck) {
+            if (!deck) return;
+            const fb = document.getElementById('savedDeckFeedback');
+            const commanderInput = document.getElementById('commanderInput');
+            const decklistInput = document.getElementById('decklistInput');
+
+            if (deck.commander) {
+                commanderInput.value = deck.commander;
+            } else if (deck.name) {
+                commanderInput.value = deck.name;
+            }
+
+            decklistInput.value = deck.raw_decklist || '';
+            activeSavedDeckName = deck.name;
+
+            if (fb) {
+                const total = deck.cards_count || deck.cards || 0;
+                fb.className = "text-[11px] px-2 py-1 rounded bg-emerald-950 text-emerald-300 border border-emerald-800";
+                fb.textContent = `Deck '${deck.name}' carregado (${total} cartas)! Pronto para análise.`;
+                fb.classList.remove('hidden');
+            }
+        }
+
+        async function loadDeckFromModal(name) {
+            closeCollectionModal();
+            const savedSelect = document.getElementById('savedDecksSelect');
+            if (savedSelect) savedSelect.value = name;
+            await loadSelectedSavedDeck();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function onSavedDeckSelectChanged() {
+            const select = document.getElementById('savedDecksSelect');
+            if (select && select.value) {
+                loadSelectedSavedDeck();
+            }
+        }
+
+        async function loadSelectedSavedDeck() {
+            const select = document.getElementById('savedDecksSelect');
+            const name = select ? select.value.trim() : '';
+            const fb = document.getElementById('savedDeckFeedback');
+            const btn = document.getElementById('loadSavedDeckBtn');
+
+            if (!name) {
+                if (fb) {
+                    fb.className = "text-[11px] px-2 py-1 rounded bg-amber-950 text-amber-300 border border-amber-800";
+                    fb.textContent = "Por favor, selecione um deck no seletor acima primeiro.";
+                    fb.classList.remove('hidden');
+                }
+                return;
+            }
+
+            // 1. Tenta carregar do cache da memória primeiro (instantâneo e sem depender de rotas adicionais)
+            const cached = (cachedBuiltDecks || []).find(d => d.name === name);
+            if (cached && cached.raw_decklist) {
+                applyDeckToForm(cached);
+                return;
+            }
+
+            // 2. Se necessário, busca na API
+            if (btn) btn.disabled = true;
+
+            try {
+                const res = await fetch(`/collection/decks/${encodeURIComponent(name)}`);
+                if (!res.ok) throw new Error("Não foi possível carregar o deck salvo.");
+                const data = await res.json();
+                applyDeckToForm(data);
+            } catch (err) {
+                if (fb) {
+                    fb.className = "text-[11px] px-2 py-1 rounded bg-rose-950 text-rose-300 border border-rose-800";
+                    fb.textContent = err.message;
+                    fb.classList.remove('hidden');
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        async function submitImportCollection() {
+            const raw_text = document.getElementById('collectionInputText').value.trim();
+            const mode = document.querySelector('input[name="importMode"]:checked')?.value || 'replace';
+            const msgBox = document.getElementById('modalImportMsg');
+            const btn = document.getElementById('importBtn');
+
+            if (!raw_text) {
+                msgBox.className = "text-xs p-2.5 rounded-lg bg-rose-950 text-rose-300 border border-rose-800";
+                msgBox.textContent = "Por favor, cole o CSV ou texto da sua coleção.";
+                msgBox.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = "Importando e normalizando...";
+            msgBox.classList.add('hidden');
+
+            try {
+                const res = await fetch('/collection/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ raw_text, mode })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Falha ao importar.');
+
+                msgBox.className = "text-xs p-2.5 rounded-lg bg-emerald-950 text-emerald-300 border border-emerald-800";
+                msgBox.textContent = `Sucesso! ${data.unique_cards} cartas únicas registradas (${data.total_cards} no total).`;
+                msgBox.classList.remove('hidden');
+                document.getElementById('collectionInputText').value = '';
+                cachedRecommendedDecks = null;
+                loadCollectionSummary();
+            } catch (err) {
+                msgBox.className = "text-xs p-2.5 rounded-lg bg-rose-950 text-rose-300 border border-rose-800";
+                msgBox.textContent = err.message;
+                msgBox.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "Importar Coleção";
+            }
+        }
+
+        async function submitClearCollection() {
+            if (!confirm("Tem certeza que deseja apagar todas as cartas salvas na coleção?")) return;
+            try {
+                await fetch('/collection', { method: 'DELETE' });
+                cachedRecommendedDecks = null;
+                loadCollectionSummary();
+            } catch (e) {
+                alert("Falha ao limpar coleção.");
+            }
+        }
+
+        async function submitSaveBuiltDeck() {
+            const name = document.getElementById('builtDeckName').value.trim();
+            const raw_decklist = document.getElementById('builtDeckList').value.trim();
+            if (!name || !raw_decklist) {
+                alert("Informe o nome e a lista do deck montado.");
+                return;
+            }
+            try {
+                const res = await fetch('/collection/decks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, raw_decklist })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || 'Erro ao salvar deck.');
+                document.getElementById('builtDeckName').value = '';
+                document.getElementById('builtDeckList').value = '';
+                loadCollectionSummary();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function deleteDeck(name) {
+            if (!confirm(`Remover o deck '${name}'? As cartas dele voltarão a ficar disponíveis na coleção.`)) return;
+            try {
+                const res = await fetch(`/collection/decks/${encodeURIComponent(name)}`, { method: 'DELETE' });
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.detail || 'Falha ao excluir.');
+                }
+                if (activeSavedDeckName === name) {
+                    activeSavedDeckName = null;
+                }
+                loadCollectionSummary();
+            } catch (e) {
+                alert(e.message);
+            }
+        }
+
+        // --- Análise do Deck ---
+        async function analyzeDeck() {
+            const commander = document.getElementById('commanderInput').value.trim();
+            const raw_decklist = document.getElementById('decklistInput').value.trim();
+            const use_collection = document.getElementById('useCollectionCheckbox').checked;
+            const errorBox = document.getElementById('errorBox');
+            const candidatesBox = document.getElementById('candidatesBox');
+            const emptyState = document.getElementById('emptyState');
+            const loadingState = document.getElementById('loadingState');
+            const resultsContent = document.getElementById('resultsContent');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            errorBox.classList.add('hidden');
+            candidatesBox.classList.add('hidden');
+
+            if (!raw_decklist) {
+                errorBox.textContent = "Por favor, cole a lista de cartas do seu deck.";
+                errorBox.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            resultsContent.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            analyzeBtn.disabled = true;
+            analyzeBtn.classList.add('opacity-50');
+
+            try {
+                const response = await fetch('/analyze/tactical', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        commander: commander || null, 
+                        raw_decklist, 
+                        use_collection,
+                        current_deck_name: activeSavedDeckName 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.status === 422 && data.candidates) {
+                    document.getElementById('candidatesMessage').textContent = data.detail;
+                    const grid = document.getElementById('candidatesGrid');
+                    
+                    if (data.candidates.length > 0) {
+                        grid.innerHTML = data.candidates.map(cmdName => `
+                            <button type="button" data-commander="${escapeAttr(cmdName)}" onclick="selectCommanderOption(this.dataset.commander)" 
+                                class="bg-slate-950 hover:bg-slate-800 border border-slate-700 hover:border-amber-400 rounded-xl p-2 text-center space-y-2 transition group cursor-pointer">
+                                <img src="${scryfallImgUrl(cmdName)}" alt="${escapeAttr(cmdName)}" onerror="onCardImgError(this)" class="w-full rounded-lg shadow">
+                                <p class="text-xs font-bold text-slate-200 group-hover:text-amber-400">${cmdName}</p>
+                            </button>
+                        `).join('');
+                    } else {
+                        grid.innerHTML = `<p class="col-span-4 text-xs text-slate-400">Nenhuma carta parecida encontrada. Por favor, digite o nome oficial em Inglês no campo Comandante.</p>`;
+                    }
+                    
+                    candidatesBox.classList.remove('hidden');
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Erro ao analisar o deck.');
+                }
+
+                renderResults(data);
+            } catch (err) {
+                errorBox.textContent = err.message;
+                errorBox.classList.remove('hidden');
+                emptyState.classList.remove('hidden');
+            } finally {
+                loadingState.classList.add('hidden');
+                analyzeBtn.disabled = false;
+                analyzeBtn.classList.remove('opacity-50');
+            }
+        }
+
+        function renderResults(data) {
+            document.getElementById('deckCountBadge').textContent = `${data.commander} • ${data.total_deck_cards} cartas`;
+            document.getElementById('tacticalSummary').textContent = data.agent_advice.tactical_summary;
+            document.getElementById('manaCurveFeedback').textContent = data.agent_advice.mana_curve_feedback;
+
+            const collBadge = document.getElementById('collectionUsedBadge');
+            if (data.collection_used) {
+                collBadge.classList.remove('hidden');
+            } else {
+                collBadge.classList.add('hidden');
+            }
+
+            // Adições Prioritárias
+            const priorityTitle = document.getElementById('priorityAdditionsTitle');
+            if (priorityTitle) {
+                priorityTitle.textContent = data.collection_used
+                    ? "🚀 Adições Prioritárias (Da sua Coleção)"
+                    : "🚀 Adições Prioritárias (Gerais do EDHREC)";
+            }
+
+            const priorityGrid = document.getElementById('priorityAdditionsGrid');
+            if (data.agent_advice.priority_additions && data.agent_advice.priority_additions.length > 0) {
+                priorityGrid.innerHTML = data.agent_advice.priority_additions.map(cardName => `
+                    <div class="bg-slate-900 border border-emerald-900/50 rounded-xl p-2 text-center space-y-2">
+                        <img src="${scryfallImgUrl(cardName)}" alt="${escapeAttr(cardName)}" loading="lazy" onerror="onCardImgError(this)" class="card-img w-full shadow-md">
+                        <p class="text-xs font-semibold text-emerald-300 truncate">${cardName}</p>
+                    </div>
+                `).join('');
+            } else {
+                priorityGrid.innerHTML = data.collection_used
+                    ? `<p class="col-span-4 text-xs text-slate-400 italic">Nenhuma carta do topo do EDHREC está disponível na sua coleção no momento.</p>`
+                    : `<p class="col-span-4 text-xs text-slate-400 italic">Nenhuma adição prioritária sugerida.</p>`;
+            }
+
+            // Upgrades Futuros
+            const futureSection = document.getElementById('futureUpgradesSection');
+            const futureGrid = document.getElementById('futureUpgradesGrid');
+            if (data.agent_advice.future_upgrades && data.agent_advice.future_upgrades.length > 0) {
+                futureGrid.innerHTML = data.agent_advice.future_upgrades.map(cardName => `
+                    <div class="bg-slate-900 border border-amber-900/40 rounded-xl p-2 text-center space-y-2">
+                        <img src="${scryfallImgUrl(cardName)}" alt="${escapeAttr(cardName)}" loading="lazy" onerror="onCardImgError(this)" class="card-img w-full shadow-md">
+                        <p class="text-xs font-semibold text-amber-300 truncate">${cardName}</p>
+                    </div>
+                `).join('');
+                futureSection.classList.remove('hidden');
+            } else {
+                futureSection.classList.add('hidden');
+            }
+
+            // Cortes Sugeridos
+            const cutsList = document.getElementById('cutsList');
+            cutsList.innerHTML = data.agent_advice.recommended_cuts.map(cut => `
+                <div class="bg-slate-950 border border-rose-950/80 rounded-lg p-3 flex gap-3 items-start">
+                    <img src="${scryfallImgUrl(cut.card_name)}" alt="${escapeAttr(cut.card_name)}" loading="lazy" onerror="onCardImgError(this)" class="w-16 rounded shadow">
+                    <div class="space-y-1">
+                        <h4 class="text-sm font-bold text-rose-400">${cut.card_name}</h4>
+                        <p class="text-xs text-slate-400 leading-snug">${cut.reason}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            // Renderiza Top Staples Gerais e Opções Budget
+            renderCardRecommendationsGrid('missingStaplesGrid', data.missing_top_staples);
+            renderCardRecommendationsGrid('missingBudgetGrid', data.missing_budget_staples);
+            switchEdhrecTab('general');
+
+            document.getElementById('resultsContent').classList.remove('hidden');
+        }
+
+        function renderCardRecommendationsGrid(containerId, list) {
+            const grid = document.getElementById(containerId);
+            if (!grid) return;
+            if (!list || list.length === 0) {
+                grid.innerHTML = `<p class="col-span-2 sm:col-span-3 md:col-span-5 text-xs text-slate-400 italic py-6 text-center">Nenhuma carta encontrada nesta categoria para este comandante.</p>`;
+                return;
+            }
+
+            grid.innerHTML = list.map(item => {
+                const synPercent = Math.round((item.synergy || 0) * 100);
+                let statusBadge = '';
+                if (item.status === 'available') {
+                    statusBadge = `<span class="inline-block text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded">🟢 Disponível</span>`;
+                } else if (item.status === 'in_use') {
+                    const deckNames = (item.in_decks || []).join(', ');
+                    statusBadge = `<span class="inline-block text-[10px] bg-amber-950 text-amber-300 border border-amber-800 px-1.5 py-0.5 rounded truncate max-w-full" title="Em uso no deck: ${escapeAttr(deckNames)}">🟡 Em deck: ${escapeAttr(deckNames)}</span>`;
+                } else if (item.status === 'not_owned') {
+                    statusBadge = `<span class="inline-block text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">⚪ Não tem</span>`;
+                }
+
+                return `
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-2 text-center space-y-1.5 hover:border-slate-700 transition">
+                        <img src="${scryfallImgUrl(item.name)}" alt="${escapeAttr(item.name)}" loading="lazy" onerror="onCardImgError(this)" class="card-img w-full shadow">
+                        <p class="text-xs font-medium text-slate-200 truncate" title="${escapeAttr(item.name)}">${item.name}</p>
+                        <div class="flex flex-col gap-1 items-center">
+                            <span class="inline-block text-[10px] bg-sky-950 text-sky-300 border border-sky-800 px-2 py-0.5 rounded-full">
+                                Sinergia: +${synPercent}%
+                            </span>
+                            ${statusBadge}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function switchEdhrecTab(tab) {
+            const generalBtn = document.getElementById('tabGeneralBtn');
+            const budgetBtn = document.getElementById('tabBudgetBtn');
+            const generalGrid = document.getElementById('missingStaplesGrid');
+            const budgetGrid = document.getElementById('missingBudgetGrid');
+            const subtitle = document.getElementById('edhrecTabSubtitle');
+
+            if (!generalBtn || !budgetBtn || !generalGrid || !budgetGrid) return;
+
+            if (tab === 'general') {
+                generalBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-sky-950 text-sky-300 border border-sky-800 shadow transition cursor-pointer";
+                budgetBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800 transition cursor-pointer";
+                generalGrid.classList.remove('hidden');
+                budgetGrid.classList.add('hidden');
+                if (subtitle) subtitle.textContent = "Cartas mais populares do formato";
+            } else {
+                budgetBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-950 text-amber-300 border border-amber-800 shadow transition cursor-pointer";
+                generalBtn.className = "px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800 transition cursor-pointer";
+                budgetGrid.classList.remove('hidden');
+                generalGrid.classList.add('hidden');
+                if (subtitle) subtitle.textContent = "Opções acessíveis de alta sinergia da comunidade";
+            }
+        }
+
+        // --- Sugestão de Decks da Coleção ---
+        let cachedRecommendedDecks = null;
+
+        function openRecommendDecksModal() {
+            document.getElementById('recommendDecksModal').classList.remove('hidden');
+            fetchRecommendedDecks();
+        }
+
+        function closeRecommendDecksModal() {
+            document.getElementById('recommendDecksModal').classList.add('hidden');
+        }
+
+        async function fetchRecommendedDecks(forceRefresh = false) {
+            const loading = document.getElementById('recommendLoading');
+            const emptyState = document.getElementById('recommendEmptyState');
+            const grid = document.getElementById('recommendGrid');
+            const badge = document.getElementById('recommendCountBadge');
+
+            if (!forceRefresh && cachedRecommendedDecks && cachedRecommendedDecks.length > 0) {
+                renderRecommendedDecks(cachedRecommendedDecks);
+                return;
+            }
+
+            loading.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            grid.classList.add('hidden');
+            if (badge) badge.classList.add('hidden');
+
+            try {
+                const res = await fetch('/collection/recommend-decks?limit=8');
+                if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.detail || 'Falha ao buscar recomendações.');
+                }
+                const data = await res.json();
+                const decks = data.decks || [];
+                cachedRecommendedDecks = decks;
+
+                if (badge) {
+                    badge.textContent = `${decks.length} baralhos encontrados`;
+                    badge.classList.remove('hidden');
+                }
+
+                if (decks.length === 0) {
+                    document.getElementById('recommendEmptyMsg').textContent = data.message || "Nenhum comandante viável encontrado na coleção.";
+                    emptyState.classList.remove('hidden');
+                } else {
+                    renderRecommendedDecks(decks);
+                    grid.classList.remove('hidden');
+                }
+            } catch (err) {
+                document.getElementById('recommendEmptyMsg').textContent = "Erro ao analisar decks: " + err.message;
+                emptyState.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+
+        function renderRecommendedDecks(decks) {
+            const grid = document.getElementById('recommendGrid');
+            if (!grid) return;
+
+            grid.innerHTML = decks.map(deck => {
+                const keyCardsHtml = (deck.key_owned_cards || []).map(cardName => `
+                    <div class="group relative flex-shrink-0" title="${escapeAttr(cardName)}">
+                        <img src="${scryfallImgUrl(cardName)}" alt="${escapeAttr(cardName)}" loading="lazy" onerror="onCardImgError(this)" 
+                            class="w-12 h-16 rounded border border-slate-700 shadow-sm object-cover group-hover:scale-125 group-hover:z-20 transition">
+                    </div>
+                `).join('');
+
+                const upgradesHtml = (deck.top_missing_upgrades || []).map(name => `
+                    <span class="inline-block text-[10px] bg-slate-900 text-amber-300/90 border border-slate-800 px-1.5 py-0.5 rounded truncate max-w-[130px]" title="${escapeAttr(name)}">
+                        + ${name}
+                    </span>
+                `).join('');
+
+                return `
+                    <div class="bg-slate-950/80 border border-slate-800 hover:border-amber-500/50 rounded-xl p-4 flex flex-col justify-between space-y-4 transition shadow-lg">
+                        <div class="flex gap-4 items-start">
+                            <img src="${scryfallImgUrl(deck.commander)}" alt="${escapeAttr(deck.commander)}" loading="lazy" onerror="onCardImgError(this)" 
+                                class="w-24 rounded-lg shadow-md border border-slate-800 flex-shrink-0 card-img">
+                            <div class="flex-1 space-y-1.5 min-w-0">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div>
+                                        <h4 class="text-sm font-bold text-slate-100 hover:text-amber-400 transition truncate" title="${escapeAttr(deck.commander)}">
+                                            ${deck.commander}
+                                        </h4>
+                                        <span class="text-[11px] font-semibold text-amber-400">
+                                            ${deck.color_identity}
+                                        </span>
+                                    </div>
+                                    <span class="text-[11px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full flex-shrink-0">
+                                        ${deck.match_percentage}% Pronto
+                                    </span>
+                                </div>
+
+                                <p class="text-[11px] text-sky-300/90 bg-sky-950/50 border border-sky-900/40 px-2 py-1 rounded leading-tight">
+                                    🎯 ${deck.theme}
+                                </p>
+
+                                <div class="text-[11px] text-slate-400 space-y-0.5 pt-1">
+                                    <div>📦 <b>${deck.owned_staples_count}</b> staples do EDHREC na coleção</div>
+                                    <div>🃏 <b>${deck.compatible_cards_count}</b> cartas válidas na cor</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cartas-chave e Upgrades -->
+                        <div class="space-y-2 border-t border-slate-800/80 pt-3">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block">Sinergias-chave na sua coleção:</span>
+                            <div class="flex items-center gap-2 overflow-x-auto pb-1">
+                                ${keyCardsHtml || '<span class="text-xs text-slate-500 italic">Várias sinergias gerais</span>'}
+                            </div>
+
+                            ${upgradesHtml ? `
+                                <div class="pt-1">
+                                    <span class="text-[10px] text-slate-500 block mb-1">Upgrades do EDHREC para buscar:</span>
+                                    <div class="flex flex-wrap gap-1">
+                                        ${upgradesHtml}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Botão de Montar -->
+                        <button type="button" data-commander="${escapeAttr(deck.commander)}" onclick="selectAndDraftDeck(this.dataset.commander, this)"
+                            class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-bold py-2 rounded-lg text-xs shadow transition flex justify-center items-center gap-2 cursor-pointer">
+                            <span>🚀 Montar & Analisar este Deck</span>
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function selectAndDraftDeck(commanderName, btn) {
+            if (!commanderName) return;
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="inline-block w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span> Montando rascunho de 100 cartas...`;
+            }
+
+            try {
+                const res = await fetch(`/collection/draft-deck/${encodeURIComponent(commanderName)}`, {
+                    method: 'POST'
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Falha ao montar deck rascunho.');
+                }
+                const data = await res.json();
+
+                // Preenche o formulário principal
+                document.getElementById('commanderInput').value = data.commander;
+                document.getElementById('decklistInput').value = data.raw_decklist;
+                document.getElementById('useCollectionCheckbox').checked = true;
+
+                closeRecommendDecksModal();
+
+                // Notificação de feedback no formulário
+                const fb = document.getElementById('savedDeckFeedback');
+                if (fb) {
+                    fb.className = "text-[11px] px-2.5 py-1.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 space-y-0.5";
+                    fb.innerHTML = `<div>✨ Rascunho de <b>${escapeAttr(data.commander)}</b> montado com sucesso (${data.cards_from_collection} cartas da sua coleção + terrenos)!</div><div class="text-[10px] text-emerald-400">Iniciando análise tática no Agente...</div>`;
+                    fb.classList.remove('hidden');
+                }
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                // Executa a análise tática do deck automaticamente
+                analyzeDeck();
+            } catch (e) {
+                alert("Erro ao montar deck: " + e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            }
+        }
+
+        // Carrega o sumário da coleção ao abrir a página
+        window.addEventListener('DOMContentLoaded', loadCollectionSummary);
+    </script>
+</body>
+</html>
