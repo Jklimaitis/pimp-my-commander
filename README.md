@@ -22,7 +22,7 @@ Uma plataforma inteligente para análise tática, otimização e descoberta de d
 
 ### 1. Clonar o repositório
 ```bash
-git clone https://github.com/SEU_USUARIO/pimp-my-commander.git
+git clone https://github.com/Jklimaitis/pimp-my-commander.git
 cd pimp-my-commander
 ```
 
@@ -44,6 +44,14 @@ OPENCODE_MAX_TOKENS=32000
 docker compose up -d
 ```
 Acesse a aplicação no navegador em: **`http://localhost:8000`**
+
+### 4. Rodar os testes
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
+pytest -q
+```
+Os testes usam um diretório temporário para a coleção, então não leem nem alteram a sua base local em `data/`.
 
 ---
 
