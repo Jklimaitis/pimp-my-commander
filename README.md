@@ -34,10 +34,11 @@ cp .env.example .env
 Edite o arquivo `.env`:
 ```env
 OPENCODE_API_KEY=sua_chave_aqui
-OPENCODE_BASE_URL=https://opencode.ai/zen/v1
-OPENCODE_MODEL=gemini-2.5-pro
+OPENCODE_BASE_URL=https://opencode.ai/inference/go/v1
+OPENCODE_MODEL=deepseek-v4.1-flash
 OPENCODE_MAX_TOKENS=32000
 ```
+O padrão é o DeepSeek pelo OpenCode Go. Para usar o Gemini 2.5 Pro via OpenCode Zen, troque o endereço e o modelo pelas linhas comentadas no `.env.example`.
 
 ### 3. Iniciar com Docker Compose
 ```bash
