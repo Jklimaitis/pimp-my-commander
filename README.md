@@ -1,6 +1,6 @@
 # 🧙‍♂️ Pimp My Commander
 
-Uma plataforma inteligente para análise tática, otimização e descoberta de decks de **Magic: The Gathering (Commander / EDH)** baseada na sua coleção física de cartas.
+Pimp My Commander une inteligência artificial e a sua coleção física de Magic: The Gathering. Em vez de sugerir cartas caras que você não tem, ele avalia seu deck (curva de mana, compra de cartas, ramp, remoções e plano de vitória) e recomenda melhorias priorizando o que já está nas suas pastas e caixas de sapato. Também identifica comandantes viáveis e gera rascunhos de decks de 100 cartas sob medida para o seu acervo. Construído em Python (FastAPI), TailwindCSS e Docker.
 
 ---
 
