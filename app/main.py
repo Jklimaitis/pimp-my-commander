@@ -18,7 +18,7 @@ from app.services import collection as collection_service
 from app.services import deck_finder
 from app.services.collection import CollectionError
 from app.services.edhrec import fetch_edhrec_recommendations, fetch_edhrec_dual_recommendations
-from app.services.parser import parse_decklist_text
+from app.services.parser import count_deck_cards, parse_decklist_text
 from app.services.scryfall import normalize_deck_to_english, search_commander_candidates
 from app.services.agent import generate_tactical_advice, AgentError
 from app.services.manabox import fetch_manabox_deck
@@ -301,7 +301,7 @@ async def analyze_deck_tactical(input_data: DeckTextInput):
 
     return FullAnalysisResponse(
         commander=commander,
-        total_deck_cards=len(normalized_cards),
+        total_deck_cards=count_deck_cards(commander, parsed_cards),
         missing_top_staples=top_missing_slice,
         missing_budget_staples=top_budget_slice,
         present_top_staples=present,

@@ -47,3 +47,13 @@ def parse_decklist_text(raw_text: str) -> Tuple[str, List[str]]:
                 cards.extend([card_name] * max(1, min(quantity, 99)))
 
     return commander, cards
+
+
+def count_deck_cards(commander: str, cards: List[str]) -> int:
+    """
+    Total de cartas do deck, contando o comandante.
+
+    O parser devolve as cartas da lista separadas do comandante (99 num deck de
+    Commander); a convenção do formato conta o comandante nas 100.
+    """
+    return len(cards) + (1 if commander else 0)
