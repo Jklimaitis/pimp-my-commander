@@ -6,8 +6,8 @@ services:
     env_file:
       - .env
     ports:
-      - "127.0.0.1:8000:8000"
+      - "${PMC_BIND:-127.0.0.1}:8001:8001"
     volumes:
       - ./data:/code/data
       - ./app:/code/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001

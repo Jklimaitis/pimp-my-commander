@@ -44,7 +44,9 @@ O padrão é o DeepSeek pelo OpenCode Go. Para usar o Gemini 2.5 Pro via OpenCod
 ```bash
 docker compose up -d
 ```
-Acesse a aplicação no navegador em: **`http://localhost:8000`**
+Acesse a aplicação no navegador em: **`http://localhost:8001`**
+
+Por padrão o serviço escuta apenas em `127.0.0.1`. Para expor na rede local, defina `PMC_BIND` no `.env` (por exemplo `PMC_BIND=0.0.0.0` ou o IP desta máquina). Para desenvolvimento com recarga automática, acrescente `--reload` ao final do `command` no `docker-compose.yml`.
 
 ### 4. Rodar os testes
 ```bash
